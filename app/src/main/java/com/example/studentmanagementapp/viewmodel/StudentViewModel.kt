@@ -104,14 +104,18 @@ class StudentViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+
     fun addStudent(
         name: String,
         contact: String,
         registration: String,
+        email: String,
+        password: String,
         isRepeater: Boolean,
+        isCR: Boolean,
         onResult: (String) -> Unit
     ) {
-        if (name.isBlank() || contact.isBlank() || registration.isBlank()) {
+        if (name.isBlank() || contact.isBlank() || registration.isBlank() || email.isBlank() || password.isBlank()) {
             onResult("VALID_DETAILS")
             return
         }
@@ -122,15 +126,7 @@ class StudentViewModel(application: Application) : AndroidViewModel(application)
                 return@launch
             }
 
-            repository.addStudent(
-                Student(
-                    name = name.trim(),
-                    contactNumber = contact.trim(),
-                    registrationNumber = registration.trim(),
-                    isRepeater = isRepeater
-                )
-            )
-
+            repository.addStudent(name, contact, registration, email, password, isRepeater, isCR)
             onResult("SUCCESS")
         }
     }

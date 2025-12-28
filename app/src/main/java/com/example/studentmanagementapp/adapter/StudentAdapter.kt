@@ -29,13 +29,12 @@ class StudentAdapter(
         holder.binding.imgRepeater.visibility =
             if (student.isRepeater) View.VISIBLE else View.GONE
 
-        if (onEditClick != null) {
-            holder.binding.btnEdit.visibility = View.VISIBLE
-            holder.binding.btnEdit.setOnClickListener {
-                onEditClick.invoke(student)
-            }
-        } else {
-            holder.binding.btnEdit.visibility = View.GONE
+        holder.binding.btnEdit.setOnClickListener {
+            onEditClick?.invoke(student)
+        }
+
+        holder.binding.btnDelete.setOnClickListener {
+            onDeleteClick(student)
         }
 
         holder.binding.btnDelete.setOnClickListener {

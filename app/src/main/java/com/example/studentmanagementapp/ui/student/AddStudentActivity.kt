@@ -2,7 +2,10 @@ package com.example.studentmanagementapp.ui.student
 
 import android.os.Bundle
 import android.text.Editable
+import android.text.InputType
 import android.text.TextWatcher
+import android.view.MotionEvent
+import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -17,12 +20,15 @@ class AddStudentActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAddStudentBinding
     private val viewModel: StudentViewModel by viewModels()
-    val registrationPattern = "^[A-Z]{4}\\d{9}$".toRegex()
+    private val registrationPattern = "^[A-Z]{4}\\d{9}$".toRegex()
+    private val contactPattern = "^03\\d{9}$".toRegex()
+    private val emailPattern = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$".toRegex()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityAddStudentBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
         isEditMode = intent.getStringExtra("MODE") == "EDIT"
         studentId = intent.getLongExtra("STUDENT_ID", -1)
 
@@ -31,140 +37,84 @@ class AddStudentActivity : AppCompatActivity() {
             binding.titleText.text = "Edit Student"
             loadStudentData()
         }
+
+        // Make registration uppercase and validate
         binding.etRegistration.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
                 val text = s.toString()
                 val upper = text.uppercase()
-
                 if (text != upper) {
                     binding.etRegistration.setText(upper)
                     binding.etRegistration.setSelection(upper.length)
                     return
                 }
-
                 binding.etRegistration.error =
                     if (upper.isNotEmpty() && !registrationPattern.matches(upper)) {
                         "Format must be AAAA000000000"
-                    } else {
-                        null
-                    }
+                    } else null
             }
-
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
-//        binding.btnSaveStudent.setOnClickListener {
-//            val name = binding.etName.text.toString()
-//            val contact = binding.etContact.text.toString()
-//            val registration = binding.etRegistration.text.toString()
-//            val isRepeater = binding.switchRepeater.isChecked
-//
-////            if (name.isBlank() || contact.isBlank() || registration.isBlank()) {
-////                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
-////            } else {
-////
-////            }
-//            if (!registration.matches(registrationPattern)) {
-//                // Show error on the input field
-//                binding.etRegistration.error = "Invalid Format! Use: AAAA000000000"
-//            } else {
-//            viewModel.addStudent(name, contact, registration, isRepeater){ result ->
-//
-//                runOnUiThread {
-//                    when (result) {
-//
-//                        "VALID_DETAILS" -> {
-//                            Toast.makeText(
-//                                this,
-//                                "Please enter valid student details",
-//                                Toast.LENGTH_SHORT
-//                            ).show()
-//                        }
-//
-//                        "DUPLICATE_REGISTRATION" -> {
-//                            Toast.makeText(
-//                                this,
-//                                "Student with this registration number already exists",
-//                                Toast.LENGTH_SHORT
-//                            ).show()
-//                        }
-//
-//                        else -> {
-//                            Toast.makeText(
-//                                this,
-//                                "Student Added successfully",
-//                                Toast.LENGTH_SHORT
-//                            ).show()
-//                            finish()
-//                        }
-//                    }
-//                }
-//            }
-//            }
-//        }
+        // Show/hide password toggle
+        binding.etPassword.setOnTouchListener { _, _ ->
+            false // allow default behavior
+        }
 
-//        binding.btnSaveStudent.setOnClickListener {
-//            val name = binding.etName.text.toString().trim()
-//            val contact = binding.etContact.text.toString().trim()
-//            val registration = binding.etRegistration.text.toString().trim()
-//            val isRepeater = binding.switchRepeater.isChecked // <- important
-//
-//            var isValid = true
-//
-//            // Validate Name
-//            if (name.isEmpty()) {
-//                binding.etName.error = "Enter student name"
-//                isValid = false
-//            } else {
-//                binding.etName.error = null
-//            }
-//
-//            // Validate Contact (10-11 digits starting with 03)
-//            val contactPattern = "^03\\d{9}$".toRegex()
-//            if (!contact.matches(contactPattern)) {
-//                binding.etContact.error = "Invalid contact number"
-//                isValid = false
-//            } else {
-//                binding.etContact.error = null
-//            }
-//
-//            // Validate Registration
-//            val registrationPattern = "^[A-Z]{4}\\d{9}$".toRegex()
-//            if (!registration.matches(registrationPattern)) {
-//                binding.etRegistration.error = "Invalid format: AAAA000000000"
-//                isValid = false
-//            } else {
-//                binding.etRegistration.error = null
-//            }
-//
-//            if (!isValid) return@setOnClickListener
-//
-//            // Add student via ViewModel
-//            viewModel.addStudent(name, contact, registration, isRepeater) { result ->
-//                runOnUiThread {
-//                    when (result) {
-//                        "VALID_DETAILS" -> Toast.makeText(this, "Enter valid student details", Toast.LENGTH_SHORT).show()
-//                        "DUPLICATE_REGISTRATION" -> Toast.makeText(this, "Registration already exists", Toast.LENGTH_SHORT).show()
-//                        else -> {
-//                            Toast.makeText(this, "Student added successfully", Toast.LENGTH_SHORT).show()
-//                            finish()
-//                        }
-//                    }
-//                }
-//            }
-//        }
+
         binding.btnSaveStudent.setOnClickListener {
+            val name = binding.etName.text.toString().trim()
+            val contact = binding.etContact.text.toString().trim()
+            val registration = binding.etRegistration.text.toString().trim()
+            val email = binding.etEmail.text.toString().trim()
+            val password = binding.etPassword.text.toString()
+            val isRepeater = binding.switchRepeater.isChecked
+            val isCR = binding.switchCR.isChecked
+
+            var isValid = true
+
+            // Validate Name
+            if (name.isEmpty()) {
+                binding.etName.error = "Enter student name"
+                isValid = false
+            } else binding.etName.error = null
+
+            // Validate Contact
+            if (!contact.matches(contactPattern)) {
+                binding.etContact.error = "Invalid contact number"
+                isValid = false
+            } else binding.etContact.error = null
+
+            // Validate Registration
+            if (!registration.matches(registrationPattern)) {
+                binding.etRegistration.error = "Invalid format: AAAA000000000"
+                isValid = false
+            } else binding.etRegistration.error = null
+
+            // Validate Email
+            if (!email.matches(emailPattern)) {
+                binding.etEmail.error = "Invalid email"
+                isValid = false
+            } else binding.etEmail.error = null
+
+            // Validate Password only in add mode
+            if (!isEditMode && password.isEmpty()) {
+                binding.etPassword.error = "Enter password"
+                isValid = false
+            } else binding.etPassword.error = null
+
+            if (!isValid) return@setOnClickListener
 
             val student = Student(
                 studentId = if (isEditMode) studentId else 0,
-                name = binding.etName.text.toString(),
-                contactNumber = binding.etContact.text.toString(),
-                registrationNumber = binding.etRegistration.text.toString(),
-                email = binding.etEmail.text.toString(),
-                password = binding.etPassword.text.toString(),
-                isRepeater = binding.switchRepeater.isChecked,
-                isCR = binding.switchCR.isChecked
+                name = name,
+                contactNumber = contact,
+                registrationNumber = registration,
+                email = email,
+                password = password,
+                isRepeater = isRepeater,
+                isCR = isCR
             )
 
             if (isEditMode) {
@@ -177,15 +127,16 @@ class AddStudentActivity : AppCompatActivity() {
                     student.name,
                     student.contactNumber,
                     student.registrationNumber,
-                    student.isRepeater
+                    student.email,
+                    student.password,
+                    student.isRepeater,
+                    student.isCR
                 ) {
                     Toast.makeText(this, "Student added", Toast.LENGTH_SHORT).show()
                     finish()
                 }
             }
         }
-
-
     }
 
     private fun loadStudentData() {
@@ -196,14 +147,14 @@ class AddStudentActivity : AppCompatActivity() {
             binding.etContact.setText(student.contactNumber)
             binding.etRegistration.setText(student.registrationNumber)
             binding.etEmail.setText(student.email)
-            binding.etPassword.setText(student.password)
-
-            binding.switchRepeater.isChecked = student.isRepeater
             binding.switchCR.isChecked = student.isCR
+            binding.switchRepeater.isChecked = student.isRepeater
 
-            // IMPORTANT RULES
-            binding.etRegistration.isEnabled = false   // 🚫 not editable
+            // Hide password field in edit mode
+            binding.tilPassword.visibility = View.GONE
+
+            // Make registration number non-editable
+            binding.etRegistration.isEnabled = false
         }
     }
-
 }

@@ -21,10 +21,32 @@ class StudentRepository(
     suspend fun addStudent(student: Student): Long {
         val id = studentDao.insert(student)
         val savedStudent = student.copy(studentId = id)
-        // Mirror the new record to Firestore (offline cache will queue if offline).
         firestoreRepository.saveStudent(savedStudent)
         return id
     }
+
+    // For new students with email, password, and isCR
+    suspend fun addStudent(
+        name: String,
+        contact: String,
+        registration: String,
+        email: String,
+        password: String,
+        isRepeater: Boolean,
+        isCR: Boolean
+    ): Long {
+        val student = Student(
+            name = name.trim(),
+            contactNumber = contact.trim(),
+            registrationNumber = registration.trim(),
+            email = email.trim(),
+            password = password.trim(),
+            isRepeater = isRepeater,
+            isCR = isCR
+        )
+        return addStudent(student)
+    }
+
     suspend fun getStudentById(id: Long) =
         studentDao.getStudentById(id)
 

@@ -45,10 +45,15 @@ class CourseDetailActivity : AppCompatActivity() {
             return
         }
 
-        studentAdapter = StudentAdapter(emptyList()) { student ->
-            courseViewModel.unenrollStudent(student.studentId, courseId)
-            Toast.makeText(this, "${student.name} removed from course", Toast.LENGTH_SHORT).show()
-        }
+        studentAdapter = StudentAdapter(
+            students = emptyList(),
+            onEditClick = null, // No edit in course detail
+            onDeleteClick = { student ->
+                courseViewModel.unenrollStudent(student.studentId, courseId)
+                Toast.makeText(this, "${student.name} removed from course", Toast.LENGTH_SHORT).show()
+            }
+        )
+
 
         binding.rvEnrolledStudents.layoutManager = LinearLayoutManager(this)
         binding.rvEnrolledStudents.adapter = studentAdapter
